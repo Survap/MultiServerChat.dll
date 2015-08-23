@@ -16,155 +16,282 @@ using TShockAPI.Hooks;
 
 namespace MultiServerChat
 {
-	[ApiVersion(1,17)]
-	public class MultiServerChat : TerrariaPlugin
-	{
-		ConfigFile Config = new ConfigFile();
-		private string savePath = "";
+    [ApiVersion(1, 21)]
+    public class MultiServerChat : TerrariaPlugin
+    {
+        ConfigFile Config = new ConfigFile();
+        private string savePath = "";
 
-		public override string Author
-		{
-			get { return "Zack Piispanen"; }
-		}
+        public override string Author
+        {
+            get { return "Zack Piispanen"; }
+        }
 
-		public override string Description
-		{
-			get { return "Facilitate chat between servers."; }
-		}
+        public override string Description
+        {
+            get { return "Facilitate chat between servers."; }
+        }
 
-		public override string Name
-		{
-			get { return "Multiserver Chat"; }
-		}
+        public override string Name
+        {
+            get { return "Multiserver Chat"; }
+        }
 
-		public override Version Version
-		{
-			get{ return new Version(1, 0, 0, 0); }
-		}
+        public override Version Version
+        {
+            get { return new Version(1, 0, 0, 0); }
+        }
 
-		public MultiServerChat(Main game) : base(game)
-		{
-			savePath = Path.Combine(TShock.SavePath, "multiserverchat.json");
-			Config = ConfigFile.Read(savePath);
-			Config.Write(savePath);
-			TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
-		}
+        public MultiServerChat(Main game) : base(game)
+        {
+            savePath = Path.Combine(TShock.SavePath, "multiserverchat.json");
+            Config = ConfigFile.Read(savePath);
+            Config.Write(savePath);
+            TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
+        }
 
-		public override void Initialize()
-		{
-			ServerApi.Hooks.ServerChat.Register(this, OnChat, 10);
-			TShock.RestApi.Register(new SecureRestCommand("/msc", RestChat, "msc.canchat"));
-		}
+        public override void Initialize()
+        {
+            ServerApi.Hooks.ServerChat.Register(this, OnChat, 10);
+            ServerApi.Hooks.ServerJoin.Register(this, OnJoin, 10);
+            ServerApi.Hooks.ServerLeave.Register(this, OnLeave, 10);
+            TShock.RestApi.Register(new SecureRestCommand("/msc", RestChat, "msc.canchat"));
+            TShock.RestApi.Register(new SecureRestCommand("/jl", RestJoinLeave, "msc.canchat"));
+        }
 
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
-			}
-			base.Dispose(disposing);
-		}
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
+                ServerApi.Hooks.ServerJoin.Deregister(this, OnJoin);
+                ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+            }
+            base.Dispose(disposing);
+        }
 
-		private void OnReload(ReloadEventArgs args)
-		{
-			if (args.Player.Group.HasPermission("msc.reload"))
-			{
-				Config = ConfigFile.Read(savePath);
-				Config.Write(savePath);
-			}
-		}
+        private void OnReload(ReloadEventArgs args)
+        {
+            if (args.Player.Group.HasPermission("msc.reload"))
+            {
+                Config = ConfigFile.Read(savePath);
+                Config.Write(savePath);
+            }
+        }
 
-		private object RestChat(RestRequestArgs args)
-		{
-			if (!Config.DisplayChat)
-				return new RestObject();
+        private object RestChat(RestRequestArgs args)
+        {
+            if (!Config.DisplayChat)
+                return new RestObject();
 
-			if (!string.IsNullOrWhiteSpace(args.Parameters["message"]))
-			{
-				try
-				{
-					var decoded = HttpUtility.UrlDecode(args.Parameters["message"]);
-					var bytes = Convert.FromBase64String(decoded);
-					var str = Encoding.UTF8.GetString(bytes);
-					var message = Message.FromJson(str);
-					TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
-				}
-				catch (Exception)
-				{
-				}
-			}
+            if (!string.IsNullOrWhiteSpace(args.Parameters["message"]))
+            {
+                try
+                {
+                    var decoded = HttpUtility.UrlDecode(args.Parameters["message"]);
+                    var bytes = Convert.FromBase64String(decoded);
+                    var str = Encoding.UTF8.GetString(bytes);
+                    var message = Message.FromJson(str);
+                    TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
+                }
+                catch (Exception)
+                {
+                }
+            }
 
-			return new RestObject();
-		}
+            return new RestObject();
+        }
 
-		private bool failure = false;
-		private void OnChat(ServerChatEventArgs args)
-		{
-			if (!Config.SendChat)
-				return;
+        private object RestJoinLeave(RestRequestArgs args)
+        {
+            if (!Config.DisplayJoinLeave)
+                return new RestObject();
 
-			var tsplr = TShock.Players[args.Who];
-			if (tsplr == null)
-			{
-				return;
-			}
+            if (!string.IsNullOrWhiteSpace(args.Parameters["message"]))
+            {
+                try
+                {
+                    var decoded = HttpUtility.UrlDecode(args.Parameters["message"]);
+                    var bytes = Convert.FromBase64String(decoded);
+                    var str = Encoding.UTF8.GetString(bytes);
+                    var message = Message.FromJson(str);
+                    TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
+                }
+                catch (Exception)
+                {
+                }
+            }
 
-			if (args.Text.StartsWith("/") && args.Text.Length > 1)
-			{
-			}
-			else
-			{
-				if (!tsplr.Group.HasPermission(Permissions.canchat))
-				{
-					return;
-				}
+            return new RestObject();
+        }
 
-				if (tsplr.mute)
-				{
-					return;
-				}
+        private bool failure = false;
+        private void OnChat(ServerChatEventArgs args)
+        {
+            if (!Config.SendChat)
+                return;
 
-				ThreadPool.QueueUserWorkItem(f =>
-				{
-					var message = new Message()
-					{
-						Text =
-							String.Format(Config.ChatFormat, TShock.Config.ServerName, tsplr.Group.Name, tsplr.Group.Prefix, tsplr.Name,
-								tsplr.Group.Suffix,
-								args.Text),
-						Red = tsplr.Group.R,
-						Green = tsplr.Group.G,
-						Blue = tsplr.Group.B
-					};
+            var tsplr = TShock.Players[args.Who];
+            if (tsplr == null)
+            {
+                return;
+            }
 
-					var bytes = Encoding.UTF8.GetBytes(message.ToString());
-					var base64 = Convert.ToBase64String(bytes);
-					var encoded = HttpUtility.UrlEncode(base64);
-					foreach (var url in Config.RestURLs)
-					{
-						var uri = String.Format("{0}?message={1}&token={2}", url, encoded, Config.Token);
+            if ((args.Text.StartsWith(Commands.Specifier) || args.Text.StartsWith(Commands.SilentSpecifier))
+                && args.Text.Length > 1)
+            {
+            }
+            else
+            {
+                if (!tsplr.Group.HasPermission(Permissions.canchat))
+                {
+                    return;
+                }
 
-						try
-						{
-							var request = (HttpWebRequest) WebRequest.Create(uri);
-							using (var res = request.GetResponse())
-							{
-							}
-							failure = false;
-						}
-						catch (Exception)
-						{
-							if (!failure)
-							{
-								Log.Error("Failed to make request to other server, server is down?");
-								failure = true;
-							}
-						}
-					}
-				});
-			}
-		}
-	}
+                if (tsplr.mute)
+                {
+                    return;
+                }
+
+                ThreadPool.QueueUserWorkItem(f =>
+                {
+                    var message = new Message()
+                    {
+                        Text =
+                            String.Format(Config.ChatFormat, TShock.Config.ServerName, tsplr.Group.Name, tsplr.Group.Prefix, tsplr.Name,
+                                tsplr.Group.Suffix,
+                                args.Text),
+                        Red = tsplr.Group.R,
+                        Green = tsplr.Group.G,
+                        Blue = tsplr.Group.B
+                    };
+
+                    var bytes = Encoding.UTF8.GetBytes(message.ToString());
+                    var base64 = Convert.ToBase64String(bytes);
+                    var encoded = HttpUtility.UrlEncode(base64);
+                    foreach (var url in Config.RestURLs)
+                    {
+                        var uri = String.Format("{0}/msc?message={1}&token={2}", url, encoded, Config.Token);
+
+                        try
+                        {
+                            var request = (HttpWebRequest)WebRequest.Create(uri);
+                            using (var res = request.GetResponse())
+                            {
+                            }
+                            failure = false;
+                        }
+                        catch (Exception)
+                        {
+                            if (!failure)
+                            {
+                                TShock.Log.Error("Failed to make request to other server, server is down?");
+                                failure = true;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        private void OnJoin(JoinEventArgs args)
+        {
+            if (!Config.DisplayJoinLeave)
+                return;
+
+            var tsplr = TShock.Players[args.Who];
+            if (tsplr == null)
+            {
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(f =>
+            {
+                var message = new Message()
+                {
+                    Text =
+                        String.Format(Config.JoinFormat, TShock.Config.ServerName, tsplr.Name),
+                    Red = Color.Yellow.R,
+                    Green = Color.Yellow.G,
+                    Blue = Color.Yellow.B
+                };
+
+                var bytes = Encoding.UTF8.GetBytes(message.ToString());
+                var base64 = Convert.ToBase64String(bytes);
+                var encoded = HttpUtility.UrlEncode(base64);
+                foreach (var url in Config.RestURLs)
+                {
+                    var uri = String.Format("{0}/jl?message={1}&token={2}", url, encoded, Config.Token);
+
+                    try
+                    {
+                        var request = (HttpWebRequest)WebRequest.Create(uri);
+                        using (var res = request.GetResponse())
+                        {
+                        }
+                        failure = false;
+                    }
+                    catch (Exception)
+                    {
+                        if (!failure)
+                        {
+                            TShock.Log.Error("Failed to make request to other server, server is down?");
+                            failure = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        private void OnLeave(LeaveEventArgs args)
+        {
+            if (!Config.DisplayJoinLeave)
+                return;
+
+            var tsplr = TShock.Players[args.Who];
+            if (tsplr == null)
+            {
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(f =>
+            {
+                var message = new Message()
+                {
+                    Text =
+                        String.Format(Config.LeaveFormat, TShock.Config.ServerName, tsplr.Name),
+                    Red = Color.Yellow.R,
+                    Green = Color.Yellow.G,
+                    Blue = Color.Yellow.B
+                };
+
+                var bytes = Encoding.UTF8.GetBytes(message.ToString());
+                var base64 = Convert.ToBase64String(bytes);
+                var encoded = HttpUtility.UrlEncode(base64);
+                foreach (var url in Config.RestURLs)
+                {
+                    var uri = String.Format("{0}/jl?message={1}&token={2}", url, encoded, Config.Token);
+
+                    try
+                    {
+                        var request = (HttpWebRequest)WebRequest.Create(uri);
+                        using (var res = request.GetResponse())
+                        {
+                        }
+                        failure = false;
+                    }
+                    catch (Exception)
+                    {
+                        if (!failure)
+                        {
+                            TShock.Log.Error("Failed to make request to other server, server is down?");
+                            failure = true;
+                        }
+                    }
+                }
+            });
+        }
+    }
 
 	public class Message
 	{
