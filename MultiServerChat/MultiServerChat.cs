@@ -16,7 +16,7 @@ using TShockAPI.Hooks;
 
 namespace MultiServerChat
 {
-    [ApiVersion(1, 21)]
+    [ApiVersion(1, 22)]
     public class MultiServerChat : TerrariaPlugin
     {
         ConfigFile Config = new ConfigFile();
