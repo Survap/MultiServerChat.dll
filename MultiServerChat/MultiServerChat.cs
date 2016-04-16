@@ -52,7 +52,7 @@ namespace MultiServerChat
 
         public override void Initialize()
         {
-            ServerApi.Hooks.ServerChat.Register(this, OnChat, 10);
+            PlayerHooks.PlayerChat += OnChat;
             ServerApi.Hooks.ServerJoin.Register(this, OnJoin, 10);
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave, 10);
             TShock.RestApi.Register(new SecureRestCommand("/msc", RestChat, "msc.canchat"));
@@ -63,7 +63,7 @@ namespace MultiServerChat
         {
             if (disposing)
             {
-                ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
+                PlayerHooks.PlayerChat -= OnChat;
                 ServerApi.Hooks.ServerJoin.Deregister(this, OnJoin);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
             }
@@ -126,6 +126,53 @@ namespace MultiServerChat
         }
 
         private bool failure = false;
+
+        private void OnChat(PlayerChatEventArgs args)
+        {
+            if (!Config.SendChat)
+                return;
+            if (args.Handled)
+                return;
+
+            ThreadPool.QueueUserWorkItem(f =>
+                {
+                    var message = new Message()
+                    {
+                        Text =
+                            String.Format(Config.ChatFormat, TShock.Config.ServerName, args.TShockFormattedText),
+                        Red = args.TextColor.R,
+                        Green = args.TextColor.G,
+                        Blue = args.TextColor.B
+                    };
+
+                    var bytes = Encoding.UTF8.GetBytes(message.ToString());
+                    var base64 = Convert.ToBase64String(bytes);
+                    var encoded = HttpUtility.UrlEncode(base64);
+                    foreach (var url in Config.RestURLs)
+                    {
+                        var uri = String.Format("{0}/msc?message={1}&token={2}", url, encoded, Config.Token);
+
+                        try
+                        {
+                            var request = (HttpWebRequest)WebRequest.Create(uri);
+                            using (var res = request.GetResponse())
+                            {
+                            }
+                            failure = false;
+                        }
+                        catch (Exception)
+                        {
+                            if (!failure)
+                            {
+                                TShock.Log.Error("Failed to make request to other server, server is down?");
+                                failure = true;
+                            }
+                        }
+                    }
+                });
+        }
+
+        [Obsolete("Use OnChat(PlayerChatEventArgs args) instead.", true)]
         private void OnChat(ServerChatEventArgs args)
         {
             if (!Config.SendChat)

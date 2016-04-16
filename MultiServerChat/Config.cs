@@ -11,7 +11,7 @@ namespace MultiServerChat
 	{
         public List<string> RestURLs = new List<string>();
         public string Token = "abcdef";
-        public string ChatFormat = "[{0}]{2}{3}{4}: {5}";
+        public string ChatFormat = "[{0}] {1}";
         public string JoinFormat = "[{0}] {1} has joined.";
         public string LeaveFormat = "[{0}] {1} has left.";
         public bool SendChat = true;
