@@ -1,5 +1,5 @@
 # MultiServerChat
-Oiriginally made by Zack Piispanen, now maintained and updated by Ryozuki
+Originally made by Zack Piispanen, now maintained and updated by Ryozuki
 
 ## Commands:
 Command | Permission | Arguments | Description
