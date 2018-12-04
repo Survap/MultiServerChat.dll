@@ -1,8 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Net;
+using System.Collections.Specialized;
 using System.Text;
 using System.Threading;
-using System.Web;
 using Microsoft.Xna.Framework;
 using Rests;
 using TShockAPI;
@@ -27,18 +28,22 @@ namespace MultiServerChat
                 };
 
                 var bytes = Encoding.UTF8.GetBytes(message.ToString());
-                var base64 = Convert.ToBase64String(bytes);
-                var encoded = HttpUtility.UrlEncode(base64);
+                var base64 = Convert.ToBase64String(bytes);              
+
                 foreach (var url in MultiServerChat.Config.RestURLs)
                 {
-                    var uri = String.Format("{0}/jl?message={1}&token={2}", url, encoded, MultiServerChat.Config.Token);
-
+                    var uri = String.Format("{0}/jl?token={1}", url, MultiServerChat.Config.Token);
+                   
                     try
                     {
-                        var request = (HttpWebRequest)WebRequest.Create(uri);
-                        using (var res = request.GetResponse())
+
+                        using (var wb = new WebClient())
                         {
+                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
+                            var data = new NameValueCollection();
+                            var response = wb.UploadString(uri, "POST", base64);
                         }
+                        
                         failure = false;
                     }
                     catch (Exception)
@@ -69,16 +74,18 @@ namespace MultiServerChat
 
                 var bytes = Encoding.UTF8.GetBytes(message.ToString());
                 var base64 = Convert.ToBase64String(bytes);
-                var encoded = HttpUtility.UrlEncode(base64);
+
                 foreach (var url in MultiServerChat.Config.RestURLs)
                 {
-                    var uri = String.Format("{0}/jl?message={1}&token={2}", url, encoded, MultiServerChat.Config.Token);
+                    var uri = String.Format("{0}/jl?token={1}", url, MultiServerChat.Config.Token);
 
                     try
                     {
-                        var request = (HttpWebRequest)WebRequest.Create(uri);
-                        using (var res = request.GetResponse())
+                        using (var wb = new WebClient())
                         {
+                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
+                            var data = new NameValueCollection();
+                            var response = wb.UploadString(uri, "POST", base64);
                         }
                         failure = false;
                     }
@@ -110,16 +117,17 @@ namespace MultiServerChat
 
                 var bytes = Encoding.UTF8.GetBytes(message.ToString());
                 var base64 = Convert.ToBase64String(bytes);
-                var encoded = HttpUtility.UrlEncode(base64);
                 foreach (var url in MultiServerChat.Config.RestURLs)
                 {
-                    var uri = String.Format("{0}/jl?message={1}&token={2}", url, encoded, MultiServerChat.Config.Token);
+                    var uri = String.Format("{0}/jl?token={1}", url, MultiServerChat.Config.Token);
 
                     try
                     {
-                        var request = (HttpWebRequest)WebRequest.Create(uri);
-                        using (var res = request.GetResponse())
+                        using (var wb = new WebClient())
                         {
+                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
+                            var data = new NameValueCollection();
+                            var response = wb.UploadString(uri, "POST", base64);
                         }
                         failure = false;
                     }
@@ -136,16 +144,20 @@ namespace MultiServerChat
         }
 
         public static void RecievedMessage(RestRequestArgs args)
-        {
-            if (!string.IsNullOrWhiteSpace(args.Parameters["message"]))
+        {          
+            if (args.Request.Method == HttpServer.Method.Post &&
+                args.Request.ContentType.HeaderValue == "application/json")
             {
+                StreamReader reader = new StreamReader(args.Request.Body);
+                string data = reader.ReadToEnd();
+
                 try
                 {
-                    var decoded = HttpUtility.UrlDecode(args.Parameters["message"]);
-                    var bytes = Convert.FromBase64String(decoded);
+                    var bytes = Convert.FromBase64String(data);
                     var str = Encoding.UTF8.GetString(bytes);
                     var message = Message.FromJson(str);
-                    TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
+                    //TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
+                    TSPlayer.All.SendMessage(message.Text, message.Red, message.Green, message.Blue);
                 }
                 catch (Exception)
                 {

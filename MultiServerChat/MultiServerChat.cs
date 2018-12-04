@@ -102,6 +102,8 @@ namespace MultiServerChat
 
         private void OnJoin(JoinEventArgs args)
         {
+            if (TShock.Players[args.Who].State < 10) return;
+
             if (!Config.DisplayJoinLeave)
                 return;
 
