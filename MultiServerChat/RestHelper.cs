@@ -66,9 +66,9 @@ namespace MultiServerChat
                 string text;
 
                 if (TShock.Config.EnableGeoIP && TShock.Geo != null)
-                    text = String.Format(MultiServerChat.Config.JoinFormat, TShock.Config.ServerName, ply.Name);
+                    text = String.Format(MultiServerChat.Config.GeoJoinFormat, TShock.Config.ServerName, ply.Name);
                 else
-                    text = string.Format(MultiServerChat.Config.GeoJoinFormat, TShock.Config.ServerName, ply.Name, ply.Country);
+                    text = string.Format(MultiServerChat.Config.JoinFormat, TShock.Config.ServerName, ply.Name, ply.Country);
 
                 var message = new Message()
                 {
