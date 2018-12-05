@@ -36,7 +36,6 @@ namespace MultiServerChat
                    
                     try
                     {
-
                         using (var wb = new WebClient())
                         {
                             wb.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -63,10 +62,17 @@ namespace MultiServerChat
             ThreadPool.QueueUserWorkItem(f =>
             {
                 bool failure = false;
+
+                string text;
+
+                if (TShock.Config.EnableGeoIP && TShock.Geo != null)
+                    text = String.Format(MultiServerChat.Config.JoinFormat, TShock.Config.ServerName, ply.Name);
+                else
+                    text = string.Format(MultiServerChat.Config.GeoJoinFormat, TShock.Config.ServerName, ply.Name, ply.Country);
+
                 var message = new Message()
                 {
-                    Text =
-                        String.Format(MultiServerChat.Config.JoinFormat, TShock.Config.ServerName, ply.Name),
+                    Text = text,
                     Red = Color.Yellow.R,
                     Green = Color.Yellow.G,
                     Blue = Color.Yellow.B
@@ -148,19 +154,23 @@ namespace MultiServerChat
             if (args.Request.Method == HttpServer.Method.Post &&
                 args.Request.ContentType.HeaderValue == "application/json")
             {
-                StreamReader reader = new StreamReader(args.Request.Body);
-                string data = reader.ReadToEnd();
-
-                try
+                using (StreamReader reader = new StreamReader(args.Request.Body))
                 {
-                    var bytes = Convert.FromBase64String(data);
-                    var str = Encoding.UTF8.GetString(bytes);
-                    var message = Message.FromJson(str);
-                    //TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
-                    TSPlayer.All.SendMessage(message.Text, message.Red, message.Green, message.Blue);
-                }
-                catch (Exception)
-                {
+                    string data = reader.ReadToEnd();
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        try
+                        {
+                            var bytes = Convert.FromBase64String(data);
+                            var str = Encoding.UTF8.GetString(bytes);
+                            var message = Message.FromJson(str);
+                            //TShock.Utils.Broadcast(message.Text, message.Red, message.Green, message.Blue);
+                            TSPlayer.All.SendMessage(message.Text, message.Red, message.Green, message.Blue);
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
                 }
             }
         }

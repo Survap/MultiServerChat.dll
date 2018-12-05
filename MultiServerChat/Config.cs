@@ -11,6 +11,7 @@ namespace MultiServerChat
         public string Token = "abcdef";
         public string ChatFormat = "[{0}] {1}";
         public string JoinFormat = "[{0}] {1} has joined.";
+        public string GeoJoinFormat = "[{0}] {1} ({2}) has joined.";
         public string LeaveFormat = "[{0}] {1} has left.";
         public bool SendChat = true;
         public bool SendJoinLeave = true;

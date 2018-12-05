@@ -41,8 +41,8 @@ namespace MultiServerChat
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             GeneralHooks.ReloadEvent += OnReload;
             PlayerHooks.PlayerChat += OnChat;
-            ServerApi.Hooks.ServerJoin.Register(this, OnJoin, 10);
-            ServerApi.Hooks.ServerLeave.Register(this, OnLeave, 10);
+            ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreetPlayer);
+            ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             TShock.RestApi.Register(new SecureRestCommand("/msc", RestChat, "msc.canchat"));
             TShock.RestApi.Register(new SecureRestCommand("/jl", RestChat, "msc.canchat"));
         }
@@ -53,7 +53,7 @@ namespace MultiServerChat
             {
                 PlayerHooks.PlayerChat -= OnChat;
                 GeneralHooks.ReloadEvent -= OnReload;
-                ServerApi.Hooks.ServerJoin.Deregister(this, OnJoin);
+                ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
             }
             base.Dispose(disposing);
@@ -63,7 +63,7 @@ namespace MultiServerChat
         {
             Commands.ChatCommands.Add(new Command("msc.reload", ReloadCmd, "msc_reload")
             {
-                HelpText = string.Format("Usage: {0}msc_reload", TShock.Config.CommandSpecifier)
+                HelpText = string.Format("Usage: {0}msc_reload", Commands.Specifier)
             });
         }
 
@@ -100,15 +100,17 @@ namespace MultiServerChat
             RestHelper.SendChatMessage(args.Player, args.TShockFormattedText);
         }
 
-        private void OnJoin(JoinEventArgs args)
+        private void OnGreetPlayer(GreetPlayerEventArgs args)
         {
-            if (TShock.Players[args.Who].State < 10) return;
-
             if (!Config.DisplayJoinLeave)
                 return;
 
             TSPlayer ply = TShock.Players[args.Who];
+
             if (ply == null)
+                return;
+
+            if (ply.SilentJoinInProgress)
                 return;
 
             RestHelper.SendJoinMessage(ply);
@@ -121,6 +123,9 @@ namespace MultiServerChat
 
             TSPlayer ply = TShock.Players[args.Who];
             if (ply == null)
+                return;
+
+            if (ply.SilentKickInProgress || ply.State < 3)
                 return;
 
             RestHelper.SendLeaveMessage(ply);
