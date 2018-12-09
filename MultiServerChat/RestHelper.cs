@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Collections.Specialized;
 using System.Text;
 using System.Threading;
 using Microsoft.Xna.Framework;
@@ -33,16 +32,23 @@ namespace MultiServerChat
                 foreach (var url in MultiServerChat.Config.RestURLs)
                 {
                     var uri = String.Format("{0}/jl?token={1}", url, MultiServerChat.Config.Token);
-                   
+
                     try
                     {
-                        using (var wb = new WebClient())
+                        var httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
+                        httpWebRequest.KeepAlive = false;
+                        httpWebRequest.ContentType = "application/json";
+                        httpWebRequest.Method = "POST";
+                        httpWebRequest.ProtocolVersion = HttpVersion.Version10;
+
+                        using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                         {
-                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
-                            var data = new NameValueCollection();
-                            var response = wb.UploadString(uri, "POST", base64);
+                            streamWriter.Write(base64);
                         }
-                        
+
+                        using (var response = httpWebRequest.GetResponseAsync())
+                        {
+                        }
                         failure = false;
                     }
                     catch (Exception)
@@ -87,11 +93,19 @@ namespace MultiServerChat
 
                     try
                     {
-                        using (var wb = new WebClient())
+                        var httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
+                        httpWebRequest.KeepAlive = false;
+                        httpWebRequest.ContentType = "application/json";
+                        httpWebRequest.Method = "POST";
+                        httpWebRequest.ProtocolVersion = HttpVersion.Version10;
+
+                        using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                         {
-                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
-                            var data = new NameValueCollection();
-                            var response = wb.UploadString(uri, "POST", base64);
+                            streamWriter.Write(base64);
+                        }
+
+                        using (var response = httpWebRequest.GetResponseAsync())
+                        {
                         }
                         failure = false;
                     }
@@ -129,11 +143,19 @@ namespace MultiServerChat
 
                     try
                     {
-                        using (var wb = new WebClient())
+                        var httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
+                        httpWebRequest.KeepAlive = false;
+                        httpWebRequest.ContentType = "application/json";
+                        httpWebRequest.Method = "POST";
+                        httpWebRequest.ProtocolVersion = HttpVersion.Version10;
+
+                        using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                         {
-                            wb.Headers[HttpRequestHeader.ContentType] = "application/json";
-                            var data = new NameValueCollection();
-                            var response = wb.UploadString(uri, "POST", base64);
+                            streamWriter.Write(base64);
+                        }
+
+                        using (var response = httpWebRequest.GetResponseAsync())
+                        {
                         }
                         failure = false;
                     }
