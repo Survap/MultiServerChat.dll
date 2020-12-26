@@ -35,16 +35,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HttpServer">
-      <HintPath>..\packages\Ryozuki.TShockPlugin.1.1.0\lib\net40\HttpServer.dll</HintPath>
+      <HintPath>..\..\..\Steam\steamapps\common\Terraria\TerraChinz\HttpServer.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\Steam\steamapps\common\Terraria\TerraChinz\Referencias\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="OTAPI">
-      <HintPath>..\packages\Ryozuki.TShockPlugin.1.1.0\lib\net40\OTAPI.dll</HintPath>
+      <HintPath>..\..\..\Steam\steamapps\common\Terraria\TerraChinz\Referencias\OTAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -56,11 +56,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="TerrariaServer">
-      <HintPath>..\packages\Ryozuki.TShockPlugin.1.1.0\lib\net40\TerrariaServer.exe</HintPath>
+      <HintPath>..\..\..\Steam\steamapps\common\Terraria\TerraChinz\Referencias\TerrariaServer.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="TShockAPI">
-      <HintPath>..\packages\Ryozuki.TShockPlugin.1.1.0\lib\net40\TShockAPI.dll</HintPath>
+      <HintPath>..\..\..\Steam\steamapps\common\Terraria\TerraChinz\Referencias\TShockAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
